@@ -33,6 +33,7 @@
 
 ## Data Description
 - **Dataset**: House Sales in King County, USA
+  
 | Variable       | Description                                                                                   |
 |----------------|-----------------------------------------------------------------------------------------------|
 | `id`           | **Unique ID for each home sold (it is not a predictor)**                                      |
