@@ -7,7 +7,7 @@ author:
 - Author Three
 - Author Four
 - Author Five
-- Author Six
+- Minako Edgar
 ---
 title: 'CSCI E-106:Assignment 6'
 author: "Charles Atchison"
