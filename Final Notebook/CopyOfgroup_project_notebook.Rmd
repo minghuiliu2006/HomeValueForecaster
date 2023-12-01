@@ -15,7 +15,8 @@ output:
 required_packages <- c(
   "plyr", "alr4", "caret", "car", "corrplot", "dplyr", "effects", "fastDummies",
   "faraway", "GGally", "ggplot2", "ggpubr", "glmnet", "lmtest", "MASS", "ModelMetrics",
-  "nortest", "olsrr", "onewaytests", "readr", "here", "stringr", "knitr", "reshape2"
+  "nortest", "olsrr", "onewaytests", "readr", "here", "stringr", "knitr", "reshape2", "leaflet",
+  "RColorBrewer", "scales", "purrr"
 )
 
 # Establish CRAN for package installs
@@ -157,44 +158,38 @@ train_df$price <- as.numeric(str_replace_all(train_df$price, "[^0-9.]", ""))
 test_df$price <- as.numeric(str_replace_all(test_df$price, "[^0-9.]", ""))
 
 # Calculation of Convergence Point: Determine the convergence point for high-value homes
-high_value_threshold <- quantile(train_df$price, probs = 0.999, na.rm = TRUE)  # Calculate the high-value threshold
+high_value_threshold <- quantile(train_df$price, probs = 0.90, na.rm = TRUE)  # Calculate the high-value threshold
 high_value_homes <- train_df[train_df$price >= high_value_threshold, ]  # Select high-value homes
 convergence_point <- c(mean(high_value_homes$lat, na.rm = TRUE), mean(high_value_homes$long, na.rm = TRUE))  # Calculate the convergence point
 
-# Data Transformation Function
+# Data Transformation Function with Distance Binning Option
 transform_data <- function(df, convergence_point, linear_model) {
-  # Date Transformation: Convert the 'date' column to a Date object
+  # Date Transformation: Convert the 'date' column to a Date object if present
   if ("date" %in% colnames(df)) {
     df$date <- as.Date(substr(as.character(df$date), 1, 8), format="%Y%m%d")
 
     # Date-Time Feature Engineering: Extract various date-related features
-    df$year_sold <- lubridate::year(df$date)  # Extract the year of sale
-    df$month_sold <- lubridate::month(df$date)  # Extract the month of sale
-    df$day_sold <- lubridate::day(df$date)  # Extract the day of sale
-    df$season <- factor(lubridate::quarter(df$date), labels = c("Winter", "Spring", "Summer", "Fall"))  # Determine the season of sale
-    df$week_of_year <- lubridate::week(df$date)  # Extract the week of the year of sale
-    df$day_of_year <- lubridate::yday(df$date)  # Extract the day of the year of sale
+    df$year_sold <- lubridate::year(df$date)
+    df$month_sold <- lubridate::month(df$date)
+    df$day_sold <- lubridate::day(df$date)
+    df$season <- factor(lubridate::quarter(df$date), labels = c("Winter", "Spring", "Summer", "Fall"))
+    df$week_of_year <- lubridate::week(df$date)
+    df$day_of_year <- lubridate::yday(df$date)
   }
 
   # Creating Dummy Variables: Convert categorical variables into dummy variables
-  #extracting first three digits of the zipcode
-  df$zipcode <- as.integer(substr(as.character(df$zipcode),1,3))
+  df <- df %>%
+    mutate(zipcode = as.factor(zipcode),
+           waterfront = as.factor(waterfront),
+           view = as.factor(view),
+           condition = as.factor(condition),
+           grade = as.character(grade)) %>%
+    dummy_cols(select_columns = c('zipcode', 'view', 'condition', 'grade'))
 
-  df$waterfront <- as.factor(df$waterfront)
-  df$view <- as.factor(df$view)
-  df$condition <- as.factor(df$condition)
-  df$grade <- as.character(df$grade)
-  df$grade <- ifelse(df$grade %in% c("1", "2", "3"), "1_3", df$grade)
-  df$grade <- ifelse(df$grade %in% c("4", "5", "6"), "4_6", df$grade)
-  df$grade <- ifelse(df$grade %in% c("8", "9", "10"), "8_10", df$grade)
-  df$grade <- ifelse(df$grade %in% c("11", "12", "13"), "11_13", df$grade)
-  df <- dummy_cols(df, select_columns = c('zipcode', 'view', 'condition', 'grade'))
-
-  # Will remove last dummy variables to resolve the multicollinearity from the dummpy variable trap
-    if (linear_model) {
-      #removing the last dummy variable of each categorical created as we need p-1 predictors
-      df <- subset(df, select = -c(zipcode_980, view_0, condition_1, grade_1_3))
-    }
+  # Remove last dummy variables to avoid multicollinearity
+  if (linear_model) {
+    df <- df[, !(names(df) %in% c("zipcode_98199", "view_0", "condition_1", "grade_13"))]
+  }
 
   # Haversine Distance Function: Calculate the distance between two points on Earth's surface
   haversine_distance <- function(lat1, long1, lat2, long2) {
@@ -207,12 +202,12 @@ transform_data <- function(df, convergence_point, linear_model) {
     return(d)
   }
 
-  # Applying Haversine Distance to the Dataset: Calculate the distance to the convergence point
+  # Calculate Haversine Distance
   df$distance_to_convergence <- mapply(haversine_distance, df$lat, df$long,
                                        MoreArgs = list(lat2 = convergence_point[1], long2 = convergence_point[2]))
 
-  # Removing no longer needed columns
-  df <- df[, !(names(df) %in% c("id", "lat", "long", "date", "zipcode", "view", "condition", "grade"))]
+  # Remove columns that are no longer needed
+  df <- df[, !(names(df) %in% c("id", "date", "zipcode", "view", "condition", "grade"))]
 
   return(df)
 }
@@ -231,7 +226,7 @@ table_height <- "400px"
 
 # Create a scrollable div and place the table inside it
 cat(sprintf('<div style="overflow-y: scroll; max-height: %s;">', table_height))
-kable(head(train_df_non_linear))
+kable(head(train_df_linear))
 cat('</div>')
 ```
 
@@ -500,34 +495,57 @@ The bar plot above visualizes the distribution of the `condition` variable, show
 #### Price vs. Grade
 
 ```{r price_vs_grade, echo = FALSE, include = TRUE}
-# Converting dummy variables back to a single categorical variable
-train_df_non_linear$grade_category <- apply(train_df_non_linear[, c("grade_1_3", "grade_4_6", "grade_7", "grade_8_10", "grade_11_13")], 1, function(x) which(x==1))
+# First, identify all grade-related columns in the dataframe
+grade_columns <- grep("grade_", names(train_df_non_linear), value = TRUE)
 
-# Assigning labels to grade categories
-grade_labels <- c("1-3", "4-6", "7", "8-10", "11-13")
+# Convert dummy variables back to a single categorical variable representing the grade
+train_df_non_linear$grade_category <- apply(train_df_non_linear[, grade_columns], 1, function(row) {
+  if (all(is.na(row))) {
+    return(NA)  # Return NA if all values in the row are NA
+  } else {
+    idx <- which(row == 1, arr.ind = TRUE)
+    return(if(length(idx) > 0) idx else NA)  # Return the index of the grade, or NA if none is 1
+  }
+})
 
-# Boxplot of Price vs. Grade
-boxplot(train_df_non_linear$price ~ factor(train_df_non_linear$grade_category, labels = grade_labels), main = "Price vs. Grade", xlab = "Grade", ylab = "Price", col = "green")
+# Extract grade labels from column names, replacing underscores with hyphens for better readability
+grade_labels <- sub("grade_", "", grade_columns) # Remove 'grade_' prefix
+grade_labels <- gsub("_", "-", grade_labels) # Replace underscores with hyphens
+
+# Create a boxplot of Price vs. Grade
+# The grade categories are used as the x-axis and the prices as the y-axis
+boxplot(train_df_non_linear$price ~ factor(train_df_non_linear$grade_category, labels = grade_labels),
+        main = "Price vs. Grade",
+        xlab = "Grade",
+        ylab = "Price",
+        col = "green")
 ```
 
 The scatter plot above compares `price` against the `grade` variable, which has been aggregated into categories as per the provided header. This analysis helps us explore how the grade of construction and design impacts home prices.
 
 ```{r distribution_grade, echo = FALSE, include = TRUE}
-# Ensure grade_aggregate is numeric for histogram
-train_df_non_linear$grade_aggregate <- ifelse(train_df_non_linear$grade_1_3 == 1, 1,
-                            ifelse(train_df_non_linear$grade_4_6 == 1, 2,
-                            ifelse(train_df_non_linear$grade_7 == 1, 3,
-                            ifelse(train_df_non_linear$grade_8_10 == 1, 4,
-                            ifelse(train_df_non_linear$grade_11_13 == 1, 5, NA)))))
+# Histogram for the Distribution of Grade
+# Convert the grade category to a numeric variable for histogram plotting
+train_df_non_linear$grade_category_numeric <- as.numeric(train_df_non_linear$grade_category)
 
-# Histogram for the distribution of Grade with custom labels
-hist(train_df_non_linear$grade_aggregate, main = "Distribution of Grade", xlab = "", ylab = "Frequency", col = "purple", breaks = length(grade_labels) - 1, xaxt = "n")
+# Define the number of breaks for the histogram based on the unique grade categories
+num_breaks <- length(unique(train_df_non_linear$grade_category_numeric, na.rm = TRUE))
+hist_breaks <- seq(min(train_df_non_linear$grade_category_numeric, na.rm = TRUE) - 0.5,
+                   max(train_df_non_linear$grade_category_numeric, na.rm = TRUE) + 0.5,
+                   length.out = num_breaks + 1)
 
-# Calculate the positions for centering the labels
-label_positions <- 1:5 - 0.5
+# Create the histogram with the specified number of breaks
+hist(train_df_non_linear$grade_category_numeric,
+     main = "Distribution of Grade",
+     xlab = "Grade",
+     ylab = "Frequency",
+     col = "purple",
+     breaks = hist_breaks,
+     xaxt = "n")
 
-# Adding custom x-axis labels with centering
-axis(1, at = label_positions, labels = grade_labels)
+# Add custom x-axis labels to the histogram
+# The labels are centered at each grade category
+axis(1, at = seq_along(grade_labels), labels = grade_labels)
 ```
 
 The bar plot above displays the distribution of the `grade_category` variable, showing the frequency of different grade categories.
@@ -571,6 +589,55 @@ ggplot(melt(top_20_corr_matrix), aes(Var1, Var2, fill = value)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+```{r correlation_matrix_for_multicollinearity, echo = FALSE, include = FALSE}
+# Selecting predictors and excluding the response variable 'price'
+predictors <- dplyr::select(train_df_linear, -price)
+
+# Convert all categorical variables to numeric using one-hot encoding
+numeric_predictors <- predictors %>%
+  mutate_if(is.factor, as.numeric) %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.numeric)
+
+# Calculate the correlation matrix
+corr_matrix <- cor(numeric_predictors, use = "pairwise.complete.obs")
+
+# Find highly correlated indices
+highly_correlated_indices <- findCorrelation(corr_matrix, cutoff = 0.8, verbose = TRUE)
+
+# Get the variable names to remove
+variables_to_remove <- names(numeric_predictors)[highly_correlated_indices]
+
+# Create a tibble for the knitr table
+correlated_pairs_df <- expand.grid(
+  Variable1 = names(numeric_predictors),
+  Variable2 = names(numeric_predictors)
+) %>%
+  filter(Variable1 != Variable2) %>%
+  mutate(Correlation = map2_dbl(Variable1, Variable2, ~corr_matrix[.x, .y])) %>%
+  filter(abs(Correlation) > 0.8) %>%  # Filter for high correlations
+  arrange(desc(abs(Correlation))) %>%
+  distinct()  # Remove duplicate pairs
+```
+
+```{r corr_removal_table, echo = FALSE, include = TRUE, results = 'asis'}
+# Output the table of highly correlated pairs using knitr::kable()
+knitr_table <- kable(
+  correlated_pairs_df,
+  caption = "Highly Correlated Variable Pairs",
+  format = "markdown"
+)
+print(knitr_table)
+```
+#### Detailed Explanation for Removal
+
+1. **`sqft_above` & `sqft_living`**: Both variables are highly correlated because the square footage of the living area above ground (`sqft_above`) is part of the total square footage of living space (`sqft_living`). We remove `sqft_above` as it is likely to contain less unique information than the total living space.
+
+2. **`week_of_year`, `day_of_year`, `month_sold`**: These variables are related to the date the house was sold and are thus inherently correlated. `day_of_year` carries the most granular information, so we might prefer to keep it and remove `week_of_year` and `month_sold` which provide more aggregated temporal information.
+
+3. **`condition_4` & `condition_3`**: The condition of the house is a categorical variable that has been one-hot encoded. Since these are mutually exclusive categories, they are negatively correlated. We might decide to keep one category as the reference group and remove the others, or revert to the original categorical variable to capture the overall condition in a single variable.
+
+By removing these variables, we aim to reduce multicollinearity, which can distort the estimated regression coefficients, inflate standard errors, and undermine the statistical significance of the predictors. The goal is to retain the variables that provide the unique and informative contribution to the model's prediction of house prices.
 
 #### Correlation Graphics Analysis
 
@@ -696,7 +763,6 @@ ggplot(weekly_counts_df, aes(x = Week_of_Year, y = Count)) +
 # Day of the Year Trends in Average House Prices
 daily_trends <- aggregate(train_df_non_linear$price, by = list(train_df_non_linear$day_of_year), FUN = mean)
 colnames(daily_trends) <- c("Day_of_Year", "Average_Price")
-library(ggplot2)
 
 # Find the global maximum
 global_max_daily <- daily_trends[which.max(daily_trends$Average_Price), ]
@@ -731,13 +797,65 @@ ggplot(daily_counts_df, aes(x = Day_of_Year, y = Count)) +
 
 Investigating the spatial aspect by analyzing the `distance_to_convergence` variable.
 
-```{r geographical_influence_analysis, echo = FALSE, include = TRUE}
-# House Prices vs. Distance to Convergence Point
-plot(train_df_non_linear$distance_to_convergence, train_df_non_linear$price, main = "House Prices vs. Distance to Convergence Point", xlab = "Distance to Convergence Point", ylab = "Price")
-```
+```{r geographical_price_analysis, echo = FALSE, include = TRUE}
+# Calculate z-scores for the prices
+train_df_non_linear <- train_df_non_linear %>%
+  mutate(z_score = scale(price))
 
-```{r}
-# Graphical Analysis Code
+# Define z-score intervals and corresponding colors
+z_score_intervals <- seq(-3, 3, by = 1)  # Create a sequence of z-scores from -3 to 3
+color_sequence <- c("green", "#8fd744", "#fde725", "#f76818ff", "#d7301fff", "#440154")  # From green to dark color
+
+# Calculate price at each z-score interval
+price_at_intervals <- sapply(z_score_intervals, function(z) {
+  mean(train_df_non_linear$price) + z * sd(train_df_non_linear$price)
+})
+
+# Ensure breaks are in ascending order and rounded to the nearest 25k
+breaks <- sort(round(price_at_intervals / 25000) * 25000)
+breaks <- c(min(train_df_non_linear$price, na.rm = TRUE), breaks, max(train_df_non_linear$price, na.rm = TRUE))
+
+# If there are negative values or values that don't make sense, remove them
+breaks <- breaks[breaks >= 0]
+
+# Create color palette with a color for each interval
+color_palette <- colorBin(color_sequence, domain = train_df_non_linear$price, bins = breaks, na.color = "#808080")
+
+# Initialize the leaflet map with updated color palette
+m <- leaflet(train_df_non_linear) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lat = ~lat, lng = ~long,
+    color = ~color_palette(price),
+    fillColor = ~color_palette(price),
+    fillOpacity = 0.8,
+    radius = 1,  # Small dots
+    popup = ~paste("Price: $", formatC(price, format = "f", big.mark = ","), "<br>", "Z-Score: ", round(z_score, 2))
+  )
+
+# Define the maximum distance for the distance bands
+max_distance <- max(train_df_non_linear$distance_to_convergence, na.rm = TRUE)
+
+# Add distance bands to the map
+for (i in seq(2, max_distance, by = 2)) {
+  m <- addCircles(m, lat = convergence_point[1], lng = convergence_point[2], radius = i * 1000,
+                  color = "grey", weight = 1, fill = FALSE, dashArray = "5, 5")
+}
+
+# Add legend and finalize the map
+m <- m %>%
+  addLegend(
+    position = "bottomright",
+    pal = color_palette,
+    values = ~price,
+    title = "Price",
+    labFormat = labelFormat(prefix = "$"),
+    opacity = 1
+  ) %>%
+  setView(lng = convergence_point[2], lat = convergence_point[1], zoom = 10)
+
+# Print the map
+m
 ```
 
 ### Conclusion
@@ -750,26 +868,68 @@ Up to this point, we have successfully conducted an exploratory data analysis (E
 ### Initial OLS Model
 To commence the model development process, we establish an Ordinary Least Squares (OLS) regression model as our baseline. This initial model utilizes the features that have undergone transformation and cleaning during the exploratory data analysis (EDA) phase. To maintain data quality, enhance model performance, and facilitate interpretability, we begin by removing columns introduced in prior graphical iterations. Additionally, we employ the standard data preprocessing practice of dropping columns with missing values (NA) to ensure dataset integrity. This step ensures that our subsequent analyses and models are built upon a robust and complete dataset, minimizing errors and potential biases.
 
-```{r initial_model, echo = TRUE}
+```{r initial_model, echo = TRUE, include = TRUE}
 # Drop columns created for visualizations in prior steps
-train_df_non_linear <- train_df_non_linear[, !colnames(train_df_non_linear) %in% c("view_category", "condition_category", "grade_category", "grade_aggregate")]
+train_df_non_linear <- train_df_non_linear[, !colnames(train_df_non_linear) %in% c("view_category", "condition_category", "grade_category", "grade_category_numeric", "z_score", "lat", "long", 'sqft_above', 'month_sold', 'week_of_year', 'condition_3')]
+train_df_linear <- train_df_linear[, !colnames(train_df_linear) %in% c("view_category", "condition_category", "grade_category", "grade_category_numeric", "z_score", "lat", "long", 'sqft_above', 'month_sold', 'week_of_year', 'condition_3')]
 
-# Drop
+# test remove dist_to_conv
+train_df_linear <- train_df_linear[, !colnames(train_df_linear) %in% c("distance_to_convergence")]
+test_df_linear <- test_df_linear[, !colnames(test_df_linear) %in% c("distance_to_convergence")]
 
-# Calculating VIF
-vif_values <- vif(lm(price ~ ., data = train_df_linear))
-print(vif_values)
+linear_model_inital <- lm(price ~ ., data = train_df_linear)
+summary(linear_model_inital)
+```
+
+### Detailed Inital Model Insights
+
+#### Model Fit
+- **R-squared (0.8404)**: Approximately 84.04% of the variability in real estate prices is explained by the model, indicating a strong fit.
+- **Adjusted R-squared (0.8393)**: Adjusted for the number of predictors, this value reaffirms the model's effectiveness.
+
+#### Coefficient Analysis
+- **Significant Predictors**: Features like `sqft_living`, `waterfront1`, and `bedrooms` have significant coefficients, implying a notable impact on housing prices.
+- **Insignificant Predictors**: Variables such as `sqft_lot15` show less significance, suggesting a minor influence on price.
+
+#### Grade Variable Insights
+- **Grade Variables**: The negative coefficients for grades (`grade_3` to `grade_12`) compared to a baseline grade (the omitted variable) are intriguing. This suggests that higher grades (implying better quality) are associated with lower prices, which warrants further investigation for data inconsistencies or other underlying factors.
+
+#### Outliers and Residuals
+- **Large Residuals**: The considerable spread in residuals (from -1518789 to 3645881) may indicate the presence of outliers or non-linear relationships not captured by the model.
+
+### Next Steps
+
+1. **Multicollinearity Check**: We will calculate the Variance Inflation Factor (VIF) for each predictor to identify multicollinearity, which can inflate the variance of the estimated regression coefficients and make the model less reliable.
+
+```{r inital_model_vif_examinaiton}
+print(vif(linear_model_inital))
 ```
 
 **Explanation**: In this section, we load the necessary libraries for modeling, including `lmtest` and `car`. We then use the `lm()` function to create the initial OLS regression model, where we predict the `price` based on all available features in the `train_df` dataset. The `summary()` function provides detailed information about the model, including coefficients, significance levels, and goodness-of-fit statistic# Feature Evaluation
 After constructing the initial model, we proceed with feature evaluation. This step involves investigating the importance of each predictor in the model. We assess the significance of individual variables and consider whether to remove or combine categorical variables to optimize model performance. The R code below demonstrates how to evaluate the importance of features:
 
 ```{r feature_evaluation, echo = TRUE}
-# Assess feature importance using stepwise selection
-stepwise_model <- step(initial_model)
+predictions <- predict(linear_model_inital, newdata = test_df_linear)
 
-# Print the summary of the stepwise model
-summary(stepwise_model)
+# Assuming 'actual_values' is the actual target variable values in your test dataset
+actual_values <- test_df_linear$price
+
+# Calculate Mean Absolute Error (MAE)
+mae <- mean(abs(predictions - actual_values))
+
+# Calculate Root Mean Squared Error (RMSE)
+rmse <- sqrt(mean((predictions - actual_values)^2))
+
+# Calculate R-squared (R2)
+residuals <- actual_values - predictions
+ss_total <- sum((actual_values - mean(actual_values))^2)
+ss_residual <- sum(residuals^2)
+r2 <- 1 - (ss_residual / ss_total)
+
+# Print the evaluation metrics
+cat("MAE:", mae, "\n")
+cat("RMSE:", rmse, "\n")
+cat("R-squared:", r2, "\n")
 ```
 
 **Explanation**: In this section, we perform feature evaluation using stepwise selection. This technique automatically evaluates the significance of each predictor and iteratively selects the most relevant variables for the model. The `step()` function optimizes the model by adding or removing variables based on their significance levels. The resulting `stepwise_model` provides insights into the final set of predictors and their impact on model performance.
