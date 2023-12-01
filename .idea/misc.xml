@@ -7,7 +7,16 @@
         <entry key="file://$PROJECT_DIR$/Charles Notebook/group_project_notebook.Rmd">
           <value>
             <RMarkdownRenderProfile>
+              <option name="lastOutput" value="$PROJECT_DIR$/Charles Notebook/group_project_notebook.html" />
               <option name="outputDirectoryUrl" value="file://$PROJECT_DIR$/Charles Notebook" />
+            </RMarkdownRenderProfile>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/Final Notebook/CopyOfgroup_project_notebook.Rmd">
+          <value>
+            <RMarkdownRenderProfile>
+              <option name="lastOutput" value="$PROJECT_DIR$/Final Notebook/CopyOfgroup_project_notebook.html" />
+              <option name="outputDirectoryUrl" value="file://$PROJECT_DIR$/Final Notebook" />
             </RMarkdownRenderProfile>
           </value>
         </entry>

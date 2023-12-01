@@ -31,7 +31,7 @@ editor_options:
     wrap: 72
 ---
 \newpage
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo = FALSE}
 # List of required packages, including 'here'
 required_packages <- c(
   "plyr", "alr4", "caret", "car", "corrplot", "dplyr", "effects", "fastDummies",
@@ -58,10 +58,8 @@ rmd_dir <- dirname(here())
 # Navigate up one directory and then to the CSV data file
 csv_file <- file.path(rmd_dir, "HomeValueForecaster", "KC_House_Sales.csv")
 
-print(csv_file)
-
-# # Read the CSV file into a data frame
-# HouseSales <- read.csv(csv_file)
+# Read the CSV file into a data frame
+df_raw <- read.csv(csv_file)
 ```
 \newpage
 ## House Sales in King County, USA data to be used in the Final Project
@@ -126,12 +124,11 @@ This section will describe the model usage, your conclusions and any regulatory 
 
 
 \newpage
-## I. Description of the data and quality (15 points)
+## II. Description of the data and quality (15 points)
 
 *Here you need to review your data, the statistical test applied to understand the predictors and the response and how are they correlated. Extensive graph analysis is recommended. Is the data continuous, or categorical, do any transformation needed? Do you need dummies? *
 
-Understrand structure of data set
-Perform the correct conversions, treatment and removal
+Understrand structure of data set Perform the correct conversions, treatment and removal
 
 \newpage
 ## III. Model Development Process (15 points)
@@ -204,10 +201,6 @@ scatter plot matrix
 
 Loading the libraries:
 
-```{r libraries, message = FALSE}
-
-```
-
 Building the display function for regression models:
 
 ```{r dispRefFunc}
@@ -227,7 +220,6 @@ dispRegFunc <- function(reg) {
 We load and review the dataset KC_House_Sales.csv:
 
 ```{r problem 1.1}
-df_raw <- read.csv("KC_House_Sales.csv")
 head(df_raw)
 ```
 

@@ -1,0 +1,337 @@
+*{
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+}
+body {
+    position: absolute;
+    left: 0em;
+    padding-top: 6em;
+    background-color: #080808;
+    text-align: left;
+    width: 100%;
+    color: #fff;
+}
+
+h1 {
+    color: #ED5A08;
+    margin-top: 1em;
+    padding-bottom: 1em;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+
+h2 {
+    color: #ED5A08;
+    padding-top: 1em;
+    font-size: 2em;
+}
+
+.section.level3 {
+    color: #f6bb27;
+    padding-top: 1em;
+    margin-left: 1em;
+    font-size: 1em;
+}
+.section.level3 p{
+    color: #ffffff;
+    padding-top: 1em;
+    margin-left: 1em;
+    font-size: 1em;
+}
+.section.level4 {
+    color: #f6bb27;
+    padding-top: 1em;
+    margin-left: 2em;
+    font-size: 1em;
+}
+.section.level4 p{
+    color: #ffffff;
+    margin-top: 1em;
+    margin-left: 1em;
+    font-size: 1em;
+}
+
+.main-content {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+.header-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #080808;
+    height: 3em;
+    z-index: 1000;
+}
+
+.logo {
+    height: 2.5em;
+    margin-left: 1em;
+}
+
+.fa-bars, .fa-xmark {
+    font-size: 1.5em;
+    margin-right: 1em;
+    cursor: pointer;
+    color: #fff; /* Make sure the icon color contrasts with the background */
+}
+
+#sidemenu {
+    position: fixed;
+    top: 3em;
+    right: 0;
+    background-color: #080808;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    width: 200px;
+    display: none;
+    max-height: calc(100vh - 100px);  /* 100px is the height of your header, adjust accordingly */
+    overflow-y: auto;
+    z-index: 1001; /* Make sure it's above the header bar */
+}
+
+/* Hide sub-menus initially */
+#sidemenu ul {
+  display: none;
+}
+
+#sidemenu li {
+    padding: 10px;
+    text-align: left;
+    color: #ED5A08;
+}
+
+#sidemenu li a {
+    color: #ED5A08;  /* Default color */
+    text-decoration: none;  /* Optional: removes the underline */
+}
+
+#sidemenu li a:hover {
+    color: #f6bb27;  /* Color when hovered */
+}
+
+/* Center h1 content in header bar */
+.header-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5em;
+    color: #ED5A08;
+    text-align: center;
+}
+
+#copyright {
+    color: white;
+    text-align: center;
+    padding: 1em;
+    bottom: 0;
+    width: 100%;
+}
+
+#copyright i {
+    color: #ED5A08;  /* Updated icon color */
+}
+
+#header h4.author,
+#header h4.date {
+    font-size: 2em;
+    text-align: center;
+}
+
+/* Code formatting */
+pre {
+    display: block;
+    overflow-x: auto;
+    padding: 1em;
+    border: none;
+    color: white;
+    margin-top: 1em;
+    background: #22232f !important;  /* Dark-grey background */
+    box-shadow: 0px 0px 10px 3px #7e3209;  /* Orange shadow effect */
+}
+
+pre code.keyword,
+pre code.operator,
+pre code.pattern-match {
+  color: #f92672;
+}
+
+pre code.function,
+pre code.pattern-match pre code.constructor {
+
+
+  color: #61aeee;
+}
+
+pre code.function pre code.params {
+  color: #a6e22e;
+}
+
+pre code.function pre code.params pre code.typing {
+  color: #fd971f;
+}
+
+pre code.module-access pre code.module {
+  color: #7e57c2;
+}
+
+pre code.constructor {
+  color: #e2b93d;
+}
+
+pre code.constructor pre code.string {
+  color: #9ccc65;
+}
+
+pre code.comment,
+pre code.quote {
+  color: #b18eb1;
+  font-style: italic;
+}
+
+pre code.doctag,
+pre code.formula {
+  color: #c678dd;
+}
+
+pre code.deletion,
+pre code.name,
+pre code.section,
+pre code.selector-tag,
+pre code.subst {
+  color: #e06c75;
+}
+
+pre code.literal {
+  color: #56b6c2;
+}
+
+pre code.addition,
+pre code.attribute,
+pre code.meta pre code.string,
+pre code.regexp,
+pre code.string {
+  color: #98c379;
+}
+
+pre code.built_in,
+pre code.class pre code.title,
+pre code.title.class_ {
+  color: #e6c07b;
+}
+
+pre code.attr,
+pre code.number,
+pre code.selector-attr,
+pre code.selector-class,
+pre code.selector-pseudo,
+pre code.template-variable,
+pre code.type,
+pre code.variable {
+  color: #d19a66;
+}
+
+pre code.bullet,
+pre code.link,
+pre code.meta,
+pre code.selector-id,
+pre code.symbol,
+pre code.title {
+  color: #61aeee;
+}
+
+pre code.emphasis {
+  font-style: italic;
+}
+
+pre code.strong {
+  font-weight: 700;
+}
+
+pre code.link {
+  text-decoration: underline;
+}
+
+table {
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    margin: 20px 0;
+    background-color: rgba(255,255,255,0.2);
+    color: #fff;
+    box-shadow: 0px 0px 10px 3px #7e3209;
+    border-radius: 1em;
+}
+
+th, td {
+    max-width: 150px; /* You can adjust this value */
+    padding: 15px;
+    text-align: center;
+    overflow: hidden; /* Hide overflow */
+    white-space: nowrap; /* Prevent text from wrapping onto the next line */
+    text-overflow: ellipsis; /* Add ellipsis when text overflows */
+}
+
+thead th {
+    background-color: #f9925b;
+    text-align: center;
+}
+
+tbody tr:hover {
+    background-color: rgba(255,255,255,0.3);
+}
+
+tbody td {
+    position: relative;
+}
+
+tbody td:hover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -9999px;
+    bottom: -9999px;
+    background-color: rgba(255,255,255,0.2);
+    z-index: -1;
+}
+
+/* Target the Plotly HTML widget at the highest level */
+.plotly {
+    box-shadow: 0px px 10px 3px #7e3209 !important;  /* Shadow to make it pop */
+    border-radius: 10px !important;  /* Rounded corners */
+    margin-top: 3em !important;
+    align-items: center !important;
+}
+
+/* Center the title in Plotly chart */
+.plotly title {
+  text-align: center !important;
+  color: #FFFFFF !important;  /* White color for better visibility on dark background */
+}
+
+.arrow-icon {
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.section.level4 ul,
+.section.level4 li {
+    color: #ffffff !important;  /* Ensures the color is set to white */
+    margin-left: 2em;
+}
+.section.level4 strong {
+    color: #ffffff !important;
+}
+
+
