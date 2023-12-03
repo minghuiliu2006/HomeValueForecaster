@@ -1,0 +1,1156 @@
+---
+title: "HARVARD EXTENSION SCHOOL"
+author:
+- Author One
+- Author Two
+- Author Three
+- Author Four
+- Author Five
+- Author Six
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+abstract: |
+  This is the location for your abstract.
+  It must consist of two paragraphs.
+subtitle: "EXT CSCI E-106 Model Data Class Group Project Template"
+geometry: margin=1.3cm
+tags:
+- logistic
+- neuronal networks
+- etc..
+editor_options:
+  markdown:
+    wrap: 72
+---
+\newpage
+```{r setup, include=FALSE, echo = FALSE}
+# List of required packages, including 'here'
+required_packages <- c(
+  "plyr", "alr4", "caret", "car", "corrplot", "dplyr", "effects", "fastDummies",
+  "faraway", "GGally", "ggplot2", "ggpubr", "glmnet", "lmtest", "MASS", "ModelMetrics",
+  "nortest", "olsrr", "onewaytests", "readr", "here"
+)
+
+# Establish CRAN for package installs
+options(repos = c(CRAN = "https://ftp.osuosl.org/pub/cran/")) # Set the CRAN mirror
+
+# Check if each package is installed; if not, install it
+for (pkg in required_packages) {
+  if (!(pkg %in% installed.packages()[,"Package"])) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+}
+
+# Load all the packages
+lapply(required_packages, library, character.only = TRUE)
+
+# Build the full path to the directory containing the Rmd file
+rmd_dir <- dirname(here())
+
+# Navigate up one directory and then to the CSV data file
+csv_file <- file.path(rmd_dir, "HomeValueForecaster", "KC_House_Sales.csv")
+
+# Read the CSV file into a data frame
+df_raw <- read.csv(csv_file)
+```
+\newpage
+## House Sales in King County, USA data to be used in the Final Project
+
+| Variable| Description |
+| :-------:| :------- |
+| id| **Unique ID for each home sold (it is not a predictor)**    |
+| date| *Date of the home sale*    |
+| price| *Price of each home sold*    |
+| bedrooms| *Number of bedrooms*    |
+| bathrooms| *Number of bathrooms, where ".5" accounts for a bathroom with a toilet but no shower*    |
+| sqft_living| *Square footage of the apartment interior living space*    |
+| sqft_lot| *Square footage of the land space*    |
+| floors| *Number of floors*    |
+| waterfront| *A dummy variable for whether the apartment was overlooking the waterfront or not*    |
+| view| *An index from 0 to 4 of how good the view of the property was*    |
+| condition| *An index from 1 to 5 on the condition of the apartment,*    |
+| grade| *An index from 1 to 13, where 1-3 falls short of building construction and design, 7 has an average level of construction and design, and 11-13 has a high-quality level of construction and design.*    |
+| sqft_above| *The square footage of the interior housing space that is above ground level*    | 
+| sqft_basement| *The square footage of the interior housing space that is below ground level*    |
+| yr_built| *The year the house was initially built*    |
+| yr_renovated| *The year of the house’s last renovation*    |
+| zipcode| *What zipcode area the house is in*    |
+| lat| *Latitude*    |
+| long| *Longitude*    |
+| sqft_living15| *The square footage of interior housing living space for the nearest 15 neighbors*    |
+| sqft_lot15| *The square footage of the land lots of the nearest 15 neighbors*    |
+\newpage
+## Instructions:
+0.  Join a team with your fellow students with appropriate size (Four Students total)
+1.  Load and Review the dataset named "KC_House_Sales'csv
+2.	Create the train data set which contains 70% of the data and use set.seed (1023). The remaining 30% will be your test data set.
+3.	Investigate the data and combine the level of categorical variables if needed and drop variables as needed. For example, you can drop id, Latitude, Longitude, etc.
+4.	Build a regression model to predict price. 
+5.	Create scatter plots and a correlation matrix for the train data set. Interpret the possible relationship between the response.
+6.	Build the best multiple linear models by using the stepwise selection method. Compare the performance of the best two linear models. 
+7.	Make sure that model assumption(s) are checked for the final model. Apply remedy measures (transformation, etc.) that helps satisfy the assumptions. 
+8.	Investigate unequal variances and multicollinearity. If necessary, apply remedial methods (WLS, Ridge, Elastic Net, Lasso, etc.). 
+9.	Build an alternative model based on one of the following approaches to predict price: regression tree, NN, or SVM.  Check the applicable model assumptions. Explore using a logistic regression. 
+10.	Use the test data set to assess the model performances from above.
+11.	Based on the performances on both train and test data sets, determine your primary (champion) model and the other model which would be your benchmark model.
+12.	Create a model development document that describes the model following this template, input the name of the authors, Harvard IDs, the name of the Group, all of your code and calculations, etc..:
+
+## Due Date: December 18th, 2023 at 11:59 pm EST
+
+**Notes**
+**No typographical errors, grammar mistakes, or misspelled words, use English language**
+**All tables need to be numbered and describe their content in the body of the document**
+**All figures/graphs need to be numbered and describe their content**
+**All results must be accurate and clearly explained for a casual reviewer to fully understand their purpose and impact**
+**Submit both the RMD markdown file and PDF with the sections with appropriate explanations. A more formal document in Word can be used in place of the pdf file but must include all appropriate explanations.**
+
+Executive Summary
+
+This section will describe the model usage, your conclusions and any regulatory and internal requirements. In a real world scneario, this section is for senior management who do not need to know the details. They need to know high level (the purpose of the model, limitations of the model and any issues).
+
+
+\newpage
+## I. Introduction (5 points)
+
+*This section needs to introduce the reader to the problem to be resolved, the purpose, and the scope of the statistical testing applied. What you are doing with your prediction? What is the purpose of the model? What methods were trained on the data, how large is the test sample, and how did you build the model?*
+
+
+\newpage
+## II. Description of the data and quality (15 points)
+
+*Here you need to review your data, the statistical test applied to understand the predictors and the response and how are they correlated. Extensive graph analysis is recommended. Is the data continuous, or categorical, do any transformation needed? Do you need dummies? *
+
+Understrand structure of data set Perform the correct conversions, treatment and removal
+
+\newpage
+## III. Model Development Process (15 points)
+
+*Build a regression model to predict price.  And of course,  create the train data set which contains 70% of the data and use set.seed (1023). The remaining 30% will be your test data set. Investigate the data and combine the level of categorical variables if needed and drop variables. For example, you can drop id, Latitude, Longitude, etc. *
+
+\newpage
+## IV. Model Performance Testing (15 points)
+
+*Use the test data set to assess the model performances. Here, build the best multiple linear models by using the stepwise both ways selection method. Compare the performance of the best two linear models. Make sure that model assumption(s) are checked for the final linear model. Apply remedy measures (transformation, etc.) that helps satisfy the assumptions. In particular you must deeply investigate unequal variances and multicollinearity. If necessary, apply remedial methods (WLS, Ridge, Elastic Net, Lasso, etc.). *
+
+
+\newpage
+## V. Challenger Models (15 points)
+
+*Build an alternative model based on one of the following approaches to predict price: regression tree, NN, or SVM. Explore using a logistic regression. Check the applicable model assumptions. Apply in-sample and out-of-sample testing, backtesting and review the comparative goodness of fit of the candidate models. Describe step by step your procedure to get to the best model and why you believe it is fit for purpose.*
+
+\newpage
+## VI. Model Limitation and Assumptions (15 points)
+
+*Based on the performances on both train and test data sets, determine your primary (champion) model and the other model which would be your benchmark model. Validate your models using the test sample. Do the residuals look normal? Does it matter given your technique? How is the prediction performance using Pseudo R^2, SSE, RMSE?  Benchmark the model against alternatives. How good is the relative fit? Are there any serious violations of the model assumptions? Has the model had issues or limitations that the user must know? (Which assumptions are needed to support the Champion model?)* 
+
+
+\newpage
+## VII. Ongoing Model Monitoring Plan (5 points)
+
+*How would you picture the model needing to be monitored, which quantitative thresholds and triggers would you set to decide when the model needs to be replaced? What are the assumptions that the model must comply with for its continuous use?*
+
+
+\newpage
+## VIII. Conclusion (5 points)
+
+*Summarize your results here. What is the best model for the data and why?*
+
+## Bibliography (7 points)
+
+https://datatofish.com/remove-column-dataframe-r/
+
+https://www.statology.org/r-convert-date-to-numeric/
+
+https://www.marsja.se/create-dummy-variables-in-r/
+
+https://www.geeksforgeeks.org/how-to-find-and-count-missing-values-in-r-dataframe/
+
+https://intro2r.com/export_plots.html
+
+https://stackoverflow.com/questions/25166624/insert-picture-table-in-r-markdown
+
+https://www.tutorialspoint.com/how-to-deal-with-error-error-in-shapiro-test-sample-size-must-be-between-3-and-5000-in-r#:~:text=Error%20in%20shapiro.-,test(%E2%80%A6)%20%3A%20sample%20size%20must%20be%20between,3%20and%205000%E2%80%9D%20in%20R%3F&text=The%20shapiro.,called%20Anderson%20Darling%20normality%20test.
+
+
+Book and decks of the Data modelling class
+
+*Please include all references, articles and papers in this section.*
+
+## Appendix (3 points)
+
+*Please add any additional supporting graphs, plots and data analysis.*
+
+scatter plot matrix
+
+
+
+
+
+
+## Code
+
+***1.  Load and Review the dataset named "KC_House_Sales'csv***
+
+Loading the libraries:
+
+Building the display function for regression models:
+
+```{r dispRefFunc}
+#building the dispRegFunc function
+dispRegFunc <- function(reg) {
+  coefs <- reg$coefficients
+  b0 = coefs[1]
+  n <- length(coefs)
+  my_formula <- paste0("Y = ", round(b0, digits = 6))
+  for (i in 2:n) {
+    my_formula <- paste0(my_formula, " + ", round(coefs[i],6), names(coefs)[i])
+  }
+  my_formula
+}
+```
+
+We load and review the dataset KC_House_Sales.csv:
+
+```{r problem 1.1}
+head(df_raw)
+```
+
+We check the structure of the dataset:
+
+```{r problem 1.2}
+str(df_raw)
+```
+
+We check the summary of the dataset:
+
+```{r problem 1.3}
+summary(df_raw)
+```
+
+We see no NAs dataset by using the r sapply and sum functions: 
+
+```{r problem 1.4}
+sapply(df_raw, function(x) sum(is.na(x))) 
+```
+
+As we can see from the str output, we need to convert price to numerical value, date to date format then to numerical value and we can remove id, lat and long columns. 
+
+```{r problem 1.5}
+#df_hs <- subset(df_raw, select = -c(id, lat, long))
+df_hs <- subset(df_raw, select = -c(id))
+df_hs$price <- as.numeric(gsub('[$,]', '', df_hs$price))
+df_hs$date <- as.Date(df_hs$date, "%Y%m%dT000000")
+df_hs$date <- as.numeric(df_hs$date)
+
+head(df_hs)
+```
+
+Now we can then work with the categorical variables, as zipcode, view, by creating dummy varibles. For this task we'll use the r function dummy_cols from fastDummies package that allows us to create with one line of code the dummy variables. 
+
+For zipcode we'll use only the first three digits to avoid creating too many columns and to avoid approximity of areas.
+
+For grade we'll consider 1, 2 and 3 as 1-3 and 11, 12 and 13 as 11-13 as shown in the description of this variable. As 7 is the average, we'll also cluster 4-6 and 8-10.
+
+The waterfront column is already a dummy variable so no changes needed. 
+
+```{r problem 1.6}
+#extracting first three digits of the zipcode
+df_hs$zipcode <- as.integer(substr(as.character(df_hs$zipcode),1,3))
+
+#converting grade to charcater and creating the clusters
+df_hs$grade <- as.character(df_hs$grade)
+df_hs$grade <- ifelse(df_hs$grade %in% c("1", "2", "3"), "1_3", df_hs$grade)
+df_hs$grade <- ifelse(df_hs$grade %in% c("4", "5", "6"), "4_6", df_hs$grade)
+df_hs$grade <- ifelse(df_hs$grade %in% c("8", "9", "10"), "8_10", df_hs$grade)
+df_hs$grade <- ifelse(df_hs$grade %in% c("11", "12", "13"), "11_13", df_hs$grade)
+
+df_hs <- dummy_cols(df_hs, select_columns = c('zipcode', 'view', 'condition', 'grade'))
+
+#removing the original categorial variables from the dataset
+df_hs <- subset(df_hs, select = -c(zipcode, view, condition, grade))
+
+#removing the last dummy variable of each categorical created as we need p-1 predictors
+df_hs <- subset(df_hs, select = -c(zipcode_980, view_0, condition_1, grade_1_3))
+
+head(df_hs)
+```
+
+
+We can then check again for NAs and the structure of the dataset:
+
+```{r problem 1.7}
+sapply(df_hs, function(x) sum(is.na(x))) 
+str(df_hs)
+```
+As can see the dataset is ready so we can move forward to the next steps.
+
+
+***2.	Create the train data set which contains 70% of the data and use set.seed (1023). The remaining 30% will be your test data set.***
+
+In this session we split the dataset randomly in 70% train and 30% test as shown below:
+
+```{r problem 2.1}
+set.seed(1023)
+n <- dim(df_hs)[1]
+IND = sample(c(1:n),n*0.7)
+df_hs_train <- df_hs[IND,]
+df_hs_test <- df_hs[-IND,]
+dim(df_hs_train)
+dim(df_hs_test)
+```
+
+
+***3.	Investigate the data and combine the level of categorical variables if needed and drop variables as needed. For example, you can drop id, Latitude, Longitude, etc.***
+
+We performed this task in part (1) to deal with only one dataset instead of two (a train and test dataset).
+
+```{r problem conv}
+# Function to calculate the Haversine distance (in kilometers)
+haversine_distance <- function(lat1, long1, lat2, long2) {
+  R <- 6371 # Earth radius in kilometers
+  # Convert degrees to radians
+  lat1 <- lat1 * pi / 180
+  long1 <- long1 * pi / 180
+  lat2 <- lat2 * pi / 180
+  long2 <- long2 * pi / 180
+  # Calculate deltas
+  delta_lat <- lat2 - lat1
+  delta_long <- long2 - long1
+  # Haversine formula
+  a <- sin(delta_lat / 2)^2 + cos(lat1) * cos(lat2) * sin(delta_long / 2)^2
+  c <- 2 * atan2(sqrt(a), sqrt(1 - a))
+  d <- R * c # Distance in kilometers
+  return(d)
+}
+
+# Calculate the convergence point from the training data
+high_value_threshold <- quantile(df_hs_train$price, probs = 0.999999999, na.rm = TRUE)
+convergence_point <- df_hs_train %>%
+    filter(price >= high_value_threshold) %>%
+    summarize(mean_lat = mean(lat, na.rm = TRUE), mean_long = mean(long, na.rm = TRUE))
+```
+
+
+```{r problem conv2}
+# Calculate distance to the convergence point (without rounding)
+df_hs_train <- df_hs_train %>%
+    rowwise() %>%
+    mutate(distance_to_convergence = haversine_distance(lat, long, convergence_point$mean_lat, convergence_point$mean_long)) %>%
+    ungroup()
+
+head(df_hs_train)
+
+df_hs_test <- df_hs_test %>%
+    rowwise() %>%
+    mutate(distance_to_convergence = haversine_distance(lat, long, convergence_point$mean_lat, convergence_point$mean_long)) %>%
+    ungroup()
+head(df_hs_test)
+
+df_hs_train <- subset(df_hs_train, select = -c(lat, long))
+df_hs_test <- subset(df_hs_test, select = -c(lat, long))
+```
+
+
+***4.	Build a regression model to predict price.***
+
+We build a regression model to predict price using the train dataset and the r function lm:
+
+```{r problem 4.1}
+fit_price_train <- lm(price ~. , data = df_hs_train)
+summary(fit_price_train)
+```
+
+As we can see sqft_basement has NAs. As there are no NAs values in the dataset as observed in part (a) this is problably due to multicollinearity. In the next step we will investigate it. Moreover we can see that sqft_lot, sqft_above, condition_2, grade_4_6, grade_7 and grade_8_10 are not statistically significant to the model as their p-value > 0.05.  We can also see that the adjusted Rsquared is 0.6525 so 65.25% of the variance of price is explained by the model. 
+
+***5.	Create scatter plots and a correlation matrix for the train data set. Interpret the possible relationship between the response.***
+
+We use the for loop in combination with the ggplot to check the scatter plot between the response variable and the predictors for the train dataset. We also check the scatter plot between sqft_basement and the other predictors as we saw from the summary output that variable is NA and do not contribute to the model. Last but but not least, we plot the correlation matrix to check in number the correlation accross the variables. 
+
+
+```{r problem 5.1, out.width = '100%'}
+colNames <- names(df_hs_train[, -2])
+for(col in colNames){
+  print(ggplot(df_hs_train, aes_string(x = col, y = colnames(df_hs_train)[2])) +
+    geom_point() +
+    ggtitle("Scatter Plot"))
+}
+
+colNames <- names(df_hs_train[, -10])
+for(col in colNames){
+  print(ggplot(df_hs_train, aes_string(x = col, y = colnames(df_hs_train)[10])) +
+    geom_point() +
+    ggtitle("Scatter Plot"))
+}
+
+print(ggplot(df_hs_train, aes(x = sqft_living, y = sqft_above)) +
+    geom_point() +
+    ggtitle("Scatter Plot"))
+
+#Correlation matrix
+cor_matrix <- round(cor(df_hs_train),2)
+
+png(filename = "cor_matrix_train_dataset.png", width = 1200, height = 800)
+corrplot(cor_matrix, method="number", addCoef.col = 1, number.cex = 1, 
+         tl.cex = 1, title = "Correlation Matrix")
+dev.off()
+knitr::include_graphics("cor_matrix_train_dataset.png")
+```
+
+As we can observe from the scatter plots between the response variables and the predictors and correlation matrix: sqft_living is the most correlated to the price (0.70) followed by sqft_above (0.60). We can also see that there is no strong correlation between price and the other variables (with correlation varying between 0.05 to 0.59).
+
+There is also a potential multicolinearity to the model as some of the response variables are correlated to each other as: 
+
+- sqft_living is correlated to bathrooms (0.75), to sqft_above (0.87) and to sqft_living15 (0.76)
+
+- sqft_lot is correlated to sqft_lo15 (0.71)
+
+- sqft_living15 is correlated to sqft_above (0.87)
+
+- condition_4 is negative correlated to condition_3 (-0.81)
+
+- grade_8_10 is negative correlated with grade_7 (-0.77)
+
+And looking visually there is a certain between sqft_basement and sqft_living and sqft_above. We do not see this correlation in the correlation matrix because of the amount 0s in the  sqft_basement variable. 
+
+As sqft_basement is does not contribute to the model and there is a correlation with other variables in the visual inspection, we decide to remove this variables from the train and test dataset.
+
+```{r problem 5.2}
+df_hs_train_new <- subset(df_hs_train, select = -c(sqft_basement))
+head(df_hs_train_new)
+
+df_hs_test_new <- subset(df_hs_test, select = -c(sqft_basement))
+head(df_hs_test_new)
+```
+
+We fit regression model without sqft_basement:
+
+```{r problem 5.3}
+fit_price_train_new <- lm(price ~. , data = df_hs_train_new)
+summary(fit_price_train_new)
+```
+We can see there is no longer variables with NA in the model. Morever the adjusted R-squared remained the same (0.6525). Moreover we can see that sqft_lot, sqft_above, condition_2, grade_4_6, grade_7 and grade_8_10 are still not statistically significant to the model as their p-value > 0.05.  
+
+
+
+***6.	Build the best multiple linear models by using the stepwise selection method. Compare the performance of the best two linear models.***
+
+For the stepwise variable selection, we run the r ols_step_both_p function as shown below with with the parameters pent=0.05 and prem=0.05. That function builds regression model from a set of candidate predictor variables by entering and removing predictors based on p values, in a stepwise manner until there is no variable left to enter or remove any more. Variables with p-value less than pent will enter into the model and variables with p-value more than prem will be removed from the model.
+
+For the backward elimination process, we run the r ols_step_backward_p function as shown below with with the parameter prem=0.05. Build regression model from a set of candidate predictor variables by removing predictors based on p values, in a stepwise manner until there is no variable left to remove any more. Variables with p-value more than prem will be removed from the model.
+
+
+For the forward stepwise variable selection, we run the r ols_step_forward_p function function as shown below with with the parameter penter=0.05. That function builds the regression model from a set of candidate predictor variables by entering predictors based on p values, in a stepwise manner until there is no variable left to enter any more. Variables with p value less than penter will enter into the model.
+
+
+```{r problem 6.1}
+#ensuring that all variables are significant at 95% level
+#ols_step_both_p(fit_price_train_new, pent=0.05, prem=0.05)
+#ols_step_backward_p(fit_price_train_new, prem = 0.05)
+#ols_step_forward_p(fit_price_train_new, penter = 0.05)
+
+```
+As we can observe from the stepwise selection output, there are several variables we need to add or remove to the the model as explained and performed below:
+
+- For the stepwise selection (both), we can observe that we need to remove the following variables: sqft_living15, date, sqft_lot, yr_renovated, sqft_lot15, view_1, view_2, condition_2, condition_3, grade_4_6. The rest of the variables need to be added. 
+
+- For the backward elimination, we can observe that we need to remove the following variables: grade_8_10, sqft_lot, sqft_above and condition_2 from the full model. 
+
+- For the stepwise forward selection, we can observe that we need to remove the following variables: yr_renovated, sqft_lot15, view_1, condition_5, view_2, condition_4, sqft_lot, condition_2, grade_4_6. The rest of the variables need to be added.
+
+
+
+```{r problem 6.2}
+# df_hs_train_new_both <- subset(df_hs_train_new, select = -c(sqft_above, sqft_lot, floors, condition_2, condition_4, condition_5, grade_4_6))
+# head(df_hs_train_new_both)
+# 
+# head(df_hs_test_new_both)
+# 
+# 
+# df_hs_train_new_back <- subset(df_hs_train_new, select = -c(floors, sqft_lot15, grade_11_13))
+# head(df_hs_train_new_back)
+# 
+# 
+# 
+# df_hs_train_new_fwd <- subset(df_hs_train_new, select = -c(date, sqft_lot, view_1, condition_5, condition_4, grade_4_6, condition_2))
+# head(df_hs_train_new_fwd)
+```
+
+
+We then fit the regression models based on the stepwise selection recommendations above:
+
+```{r problem 6.3}
+#fit_price_train_new_both <- lm(price ~. , data = df_hs_train_new_both)
+#summary(fit_price_train_new_both)
+
+# Stepwise model selection based on AIC
+fit_price_train_new_both <- step(fit_price_train_new, direction = "both", trace = 0)
+
+# View the summary of the final model
+summary(fit_price_train_new_both )
+
+
+#fit_price_train_new_back <- lm(price ~. , data = df_hs_train_new_back)
+#summary(fit_price_train_new_back)
+
+# Stepwise model selection based on AIC
+fit_price_train_new_back <- step(fit_price_train_new, direction = "backward", trace = 0)
+
+# View the summary of the final model
+summary(fit_price_train_new_back)
+
+#fit_price_train_new_fwd <- lm(price ~. , data = df_hs_train_new_fwd)
+#summary(fit_price_train_new_fwd)
+
+# Stepwise model selection based on AIC
+fit_price_train_new_fwd <- step(fit_price_train_new, direction = "forward", trace = 0)
+
+# View the summary of the final model
+summary(fit_price_train_new_fwd)
+```
+
+
+From the summary results for the stepwise selection (both) and backward selection, we can see that all variables are statistically significant to the model as their p-values are lower than 0.05. Moreover, the adjusted Rsquared are 0.6398 and 0.6524 respectively. For the stepwise forward we can see that sqft_above is the only variable not statistically significant to the model and the adjuster Rsquared is 0.6487. By looking then to the the adjusted Rsquared and the RMSE of the different model, the backward elimination model is the one with the highest the adjusted Rsquared and the lowest RMSE as we can see below. So this will be the model will choose for the moving forward to the next step. 
+
+```{r problem model best}
+# Stepwise model selection based on AIC
+fit_price_train_new_fwd <- update(fit_price_train_new_fwd, .~. -floors)
+fit_price_train_new_fwd <- update(fit_price_train_new_fwd, .~. -sqft_lot15)
+fit_price_train_new_fwd <- update(fit_price_train_new_fwd, .~. -grade_11_13)
+
+# View the summary of the final model
+summary(fit_price_train_new_fwd)
+```
+
+```{r problem 6.4}
+summary(fit_price_train_new_both)$adj.r.squared
+summary(fit_price_train_new_back)$adj.r.squared
+summary(fit_price_train_new_fwd)$adj.r.squared
+
+rmse(df_hs_train_new_both$price,fit_price_train_new_both$fitted.values)
+rmse(df_hs_train_new_back$price, fit_price_train_new_back$fitted.values)
+rmse(df_hs_train_new_fwd$price, fit_price_train_new_fwd$fitted.values)
+```
+
+As we decided to move forward with the backward elimination model, we just fit it again and save it to the fit_price_train_new_step object. 
+
+```{r problem 6.5}
+fit_price_train_new_step <- fit_price_train_new_back
+summary(fit_price_train_new_step)
+dispRegFunc(fit_price_train_new_step)
+```
+
+
+
+
+
+***7.	Make sure that model assumption(s) are checked for the final model. Apply remedy measures (transformation, etc.) that helps satisfy the assumptions.***
+
+In order to check regression model assumptions visually, we can use the boxplot and plot() as shown below:
+
+
+```{r problem 7.1}
+par(mfrow=c(1,1))
+plot(fit_price_train_new_step)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_step$residuals)
+```
+
+
+We observe a nonlinearity of the regression function: The residuals vs. fitted values plot shows that the function may not be linear. As the fitted values increase, the residuals seem to increase. Normally, we would expect to see the residual values evenly distributed around zero for all levels of fitted values which is not the case.
+
+We can also observe nonconstancy of error variance: The same plot shows that the spread of error terms becomes larger as the fitted values increase. This suggests the error variance may not be constant.
+
+we observe a nonnormality of error terms: The Q-Q plot shows deviations from the diagonal line, especially the extreme values. This suggests the error terms are not normally distributed
+
+We observe a nonindependence of error terms: The scale-location plot shows that there is a relationship between the error terms and the fitted values. As fitted values increase, the error terms moving up systematically.
+
+In the residuals vs. leverage plot above, we can't see a the presence large outlier as there is no case outside the dash line. Nevertheless, there are are outliers as observed in the boxplot of residuals. 
+
+In order to support my visual evidence that error variances are not constant, we can run a Breusch-Pagan test by first defining the hypothesis of the test:
+
+- Null Hypothesis Ho: Error variances are constant
+
+- Alternative Hypothesis Ha: Error variances are not constant
+
+Alpha is 0.05 so if P-value < 0.05 we reject the null hypothesis.
+
+Running run the Breusch-Pagan test:
+
+```{r problem 7.2}
+bptest(fit_price_train_new_step, studentize = FALSE)
+```
+
+P-value < 2.2e-16 (P-value < 0.05) so we reject the null hypothesis Ho in favor of the alternative hypothesis Ha concluding that the error variances are not constant.
+
+
+We can also run a Correlation Test for Normality with the r function Anderson-Darling normality test (as sample size of the dataset is higher than 5000):
+
+- Null hypothesis Ho: Errors are normally distributed
+
+- Alternative hypothesis Ha: Errors are not normally distributed
+
+Alpha is 0.05 so if P-value < 0.05 we reject the null hypothesis. 
+
+```{r problem 7.3}
+ei <- fit_price_train_new_step$residuals
+ad.test(ei)
+```
+
+P-value is 2.2e-16 (P-value < 0.05) so we can reject the null hypothesis in favor of alternative hypothesis Ha concluding that the errors are not normally distributed.
+
+So in order to start investigating about the nonlinearity of the model, nonconstancy of the error variances and nonnormality, we check the outlier data points as shown below. We run the r functions:
+
+- ols_plot_resid_lev function that provide us a graph for detecting outliers and/or observations with high leverage. 
+
+- ols_plot_resid_stud_fit function that provides us a plot for detecting violation of assumptions about residuals such as non-linearity, constant variances and outliers. It can also be used to examine model fit.
+
+- ols_plot_cooksd_chart that provides us a chart of cook's distance to detect observations that strongly influence fitted values of the model.
+
+We also run the r influence.measures function that provides us several diagnostics as the cook's distance. Then we filter the data points with the cook's distance >= 0.04 which is a reasonable threshold for the inflation data:
+
+
+```{r problem 7.4}
+#influence_measures <- influence.measures(fit_price_train_new_step)
+#rownames(influence_measures$infmat[rowSums(influence_measures[[2]]) > 0, ])
+ols_plot_resid_lev(fit_price_train_new_step)
+ols_plot_resid_stud_fit(fit_price_train_new_step)
+ols_plot_cooksd_chart(fit_price_train_new_step)
+df_hs_train_new %>%
+  dplyr::mutate(Observation = row.names(df_hs_train_new)) %>%
+  dplyr::select(Observation, price) %>%
+  cbind(dplyr::select(data.frame(stats::influence.measures(fit_price_train_new_step)$infmat), cook.d))  %>%
+  dplyr::arrange(desc(cook.d)) %>%
+  dplyr::filter(cook.d >= 0.04) 
+```
+
+
+As we can see from the plost there are several influential points that impacts the regression model. But more specially the cases "15871", "1449", "7253", "1316", "2627", "8093" as we can see in the table the output the cook's distance above the threshold determined. So we decided to remove these data points as a first to improve the linearity assumptions. Once we do that we run again the diagnostic plots. 
+
+
+```{r problem 7.5}
+case_lev <- c("13244", "3098", "9986", "5127", "2627", "8814", "643")
+df_hs_train_inf <- df_hs_train_new[!(row.names(df_hs_train_new) %in% case_lev),]
+fit_price_train_new_inf <- lm(price ~. , data = df_hs_train_inf)
+summary(fit_price_train_new_inf)
+par(mfrow=c(1,1))
+plot(fit_price_train_new_inf)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_inf$residuals)
+```
+
+We still observe a nonlinearity of the regression function: The residuals vs. fitted values plot shows that the function may not be linear. As the fitted values increase, the residuals seem to increase. Normally, we would expect to see the residual values evenly distributed around zero for all levels of fitted values which is not the case.
+
+We can also observe nonconstancy of error variance: The same plot shows that the spread of error terms becomes larger as the fitted values increase. This suggests the error variance may not be constant.
+
+we observe a nonnormality of error terms: The Q-Q plot shows deviations from the diagonal line, especially the extreme values. This suggests the error terms are not normally distributed
+
+We observe a nonindependence of error terms: The scale-location plot shows that there is a relationship between the error terms and the fitted values. As fitted values increase, the error terms moving up systematically.
+
+Nevertheless, In the residuals vs. leverage plot above, we no longer see the datapoints with high leverage as before (e.g. cases "15871", "1449", "7253", "1316", "2627", "8093").
+
+Second, we investigate the multicolinearity in the model as we saw in part (5) that several predictor variables were correlated to each other. For that we run r vif function that provides us the Variable Inflation Factor of each predictor variables.  
+
+```{r problem 7.6}
+# Stepwise model selection based on AIC
+fit_price_train_new_inf <- update(fit_price_train_new_inf, .~. -floors)
+fit_price_train_new_inf <- update(fit_price_train_new_inf, .~. -sqft_lot15)
+fit_price_train_new_inf <- update(fit_price_train_new_inf, .~. -grade_11_13)
+
+# View the summary of the final model
+summary(fit_price_train_new_fwd)
+vif(fit_price_train_new_inf)
+```
+
+As we can see from the vif output, condition_3 and condition_ have vifs higher than 10 which is the common threshold adopted by the industry (values lower these thereshold are accepted). Therefore we decide to remove from the train and test dataset the variable condition_3 which has the higher vif between the two variables. We then fit the regression model, run the vif function again. 
+
+```{r problem 7.7}
+df_hs_train_inf_2 <- subset(df_hs_train_inf, select = -c(condition_3, floors, sqft_lot15, grade_11_13, condition_4, grade_7))
+head(df_hs_train_inf_2)
+
+df_hs_test_trans <- subset(df_hs_test_new, select = -c(condition_3, floors, sqft_lot15, grade_11_13, condition_4, grade_7))
+head(df_hs_test_trans)
+
+fit_price_train_new_inf_2 <- lm(price ~. , data = df_hs_train_inf_2)
+summary(fit_price_train_new_inf_2)
+
+vif(fit_price_train_new_inf_2)
+```
+
+As we can see the new regression model has all variables statistical significant and th adjusted Rsquared slightly decreased to  0.6492. We can also see the we solved for the multicolinearity problem as all vifs has a value lower than the threshold of 10.
+
+Third, we perform transform Y as we observed nonnormality, nonlinearity and unequal error variances from the diagnostic plots). We perform the Box-Cox procedure to transform Y as shown below: 
+
+```{r problem 7.8}
+par(mfrow=c(1,1))
+bc <- boxcox(fit_price_train_new_inf_2, lambda=seq(-1,1,by=.1))
+lambda <- bc$x[which.max(bc$y)]
+lambda
+```
+
+As we can observe from the box cox plot above, the lambda that give the highest log-likehood is very close to 0. So we we transform Y using the log transformation as shown below. In order to check regression model assumptions visually, we can use the boxplot and plot() as shown below:
+
+
+```{r problem 7.9}
+fit_price_train_new_trans <- lm(log(price) ~. , data = df_hs_train_inf_2)
+summary(fit_price_train_new_trans)
+par(mfrow=c(1,1))
+plot(fit_price_train_new_trans)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_trans$residuals)
+```
+
+
+
+```{r problem 7.4.1}
+case_lev <- c("7465", "14102", "2754")
+df_hs_train_trans <- df_hs_train_inf_2[!(row.names(df_hs_train_inf_2) %in% case_lev),]
+fit_price_train_new_trans_2 <- lm(log(price) ~. , data = df_hs_train_trans)
+summary(fit_price_train_new_trans_2)
+par(mfrow=c(1,1))
+plot(fit_price_train_new_trans_2)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_trans_2$residuals)
+```
+
+
+```{r problem 7.10}
+#JUST A TEST
+case_lev <- c("10141", "9884", "8052")
+df_hs_train_trans <- df_hs_train_trans[!(row.names(df_hs_train_trans) %in% case_lev),]
+fit_price_train_new_trans_2 <- lm(log(price) ~. , data = df_hs_train_trans)
+summary(fit_price_train_new_trans_2)
+coeff_ols <- fit_price_train_new_trans_2$coefficients
+par(mfrow=c(1,1))
+plot(fit_price_train_new_trans_2)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_trans_2$residuals)
+```
+
+
+There was an improvement in the linearity of the regression function: The residuals vs. fitted values plot shows that residual values a more even distributed around zero for all levels of fitted values.
+
+
+we observe a more normality of error terms: The Q-Q plot shows smaller deviations than before the transformation from the diagonal line. This suggests the error terms are more normally distributed.
+
+There was also an improvement in the independence of error terms: The scale-location plot shows that there is no longer the relationship between the error terms and the fitted values as observed before the transformation. 
+
+In the residuals vs. leverage plot above, we can't see a the presence large outlier as there is no case outside the dash line. Nevertheless, there are are outliers as observed in the boxplot of residuals. 
+
+
+In order to support my visual evidence that error variances are not constant, we can run a Breusch-Pagan test by first defining the hypothesis of the test:
+
+- Null Hypothesis Ho: Error variances are constant
+
+- Alternative Hypothesis Ha: Error variances are not constant
+
+Alpha is 0.05 so if P-value < 0.05 we reject the null hypothesis.
+
+Running run the Breusch-Pagan test:
+
+```{r problem 7.11}
+bptest(fit_price_train_new_trans_2, studentize = FALSE)
+```
+
+P-value < 2.2e-16 (P-value < 0.05) so we reject the null hypothesis Ho in favor of the alternative hypothesis Ha concluding that the error variances are still not constant.
+
+
+We can also run a Correlation Test for Normality with the r function Anderson-Darling normality test (as sample size of the dataset is higher than 5000):
+
+- Null hypothesis Ho: Errors are normally distributed
+
+- Alternative hypothesis Ha: Errors are not normally distributed
+
+Alpha is 0.05 so if P-value < 0.05 we reject the null hypothesis. 
+
+```{r problem 7.12}
+ei_trans <- fit_price_train_new_trans_2$residuals
+ad.test(ei_trans)
+```
+P-value < 2.2e-16 (P-value < 0.05) so we reject the null hypothesis Ho in favor of the alternative hypothesis Ha concluding that the errorr are still not normally distributed.
+
+
+***8.	Investigate unequal variances and multicollinearity. If necessary, apply remedial methods (WLS, Ridge, Elastic Net, Lasso, etc.).***
+
+We start by investigating unequal variances using the Weighted least square method as shown below. This method gives lower weights to data points with higher residuals. We then run the Breusch-Pagan test with studentize = TRUE as we suspect heteroscedasticity as saw on the plots.  
+
+```{r problem 8.1}
+ei_trains <- fit_price_train_new_trans_2$residuals
+abs_ei_trans <- abs(ei_trains)
+fit_price_res <- lm(abs_ei_trans ~., data = df_hs_train_trans)
+#summary(fit_price_res)
+res_fitted_values <- fit_price_res$fitted.values
+w1 <- 1/(res_fitted_values^2)
+
+fit_price_train_new_trans_inf_w1 <- lm(log(price) ~. , 
+                               weights = w1, data = df_hs_train_trans)
+summary(fit_price_train_new_trans_inf_w1)
+par(mfrow=c(1,1))
+plot(fit_price_train_new_trans_inf_w1)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_trans_inf_w1$residuals)
+bptest(fit_price_train_new_trans_inf_w1, studentize = TRUE)
+```
+
+We can see that the Breusch-Pagan test has a p-value < 2.2e-16 si iterate 200 times to try to get p-value > 0.05.
+
+```{r problem 8.2}
+abs_ei_trans_2 <- abs(fit_price_train_new_trans_inf_w1$residuals)
+iteration <- 1
+
+while (iteration < 200){
+  #2nd iteration - one more iteration
+  #print(paste0("iteration: ", iteration))
+  fit_price_res_2 <- lm(abs_ei_trans_2 ~., data = df_hs_train_trans)
+  #summary(fit_price_res_2)
+  res_fitted_values_2 <- fit_price_res$fitted.values
+  w2 <- 1/(res_fitted_values_2^2)
+  
+  fit_price_train_new_trans_inf_w2 <- lm(log(price) ~. , 
+                               weights = w2, data = df_hs_train_trans)
+  
+  ei_trans_2 <-  fit_price_train_new_trans_inf_w2$residuals
+  ei_trans_2 <- abs(ei_trans_2)
+  
+  bptest_test <- bptest(fit_price_train_new_trans_inf_w2, studentize = TRUE)
+  pvalue = bptest_test$p.value
+  
+  iteration = iteration + 1
+  
+  
+}
+
+coeff_wls <- fit_price_train_new_trans_inf_w2$coefficients
+summary(fit_price_train_new_trans_inf_w2)
+bptest(fit_price_train_new_trans_inf_w2, studentize = TRUE)
+par(mfrow=c(1,1))
+plot(fit_price_train_new_trans_inf_w2)
+par(mfrow=c(1,1))
+boxplot(fit_price_train_new_trans_inf_w2$residuals)
+
+```
+
+As can see that the plots are similar of when we perform the transformation so we believe there is no more improvement to do with the WLS. We compare the coefficients between our ols model (transformed) and the wls: 
+
+```{r problem 8.3}
+df_coeff_ols <- data.frame(coeff = names(coeff_ols), coeff_ols = coeff_ols)
+df_coeff_wls <- data.frame(coeff = names(coeff_wls), coeff_wls = coeff_wls)
+
+df_wls <- df_coeff_ols %>% 
+            left_join(df_coeff_wls, by=c('coeff'))
+df_wls
+```
+
+As we can both model have very close coefficients and all of them has the same sign which indicates we were able to improve the unequal variances of our ols model. 
+
+
+We move forwared to check for multicolinearity. Ridge regression is then used when there is multicolinearity among the variables. First we define X and Y matrix and take out Y and law indicator from data for X (all independent variable):
+
+```{r problem 8.4}
+x <- data.matrix(dplyr::select(df_hs_train_trans, -price))
+y <- log(df_hs_train_trans$price)
+```
+
+Then we run the ridge regression model below by setting up the alpha to 0 and using the best lambda. 
+
+
+```{r problem 8.5}
+set.seed(1023)
+RidgeMod <- glmnet(x, y, alpha=0, nlambda=100,lambda.min.ratio=0.0001)
+CvRidgeMod <- cv.glmnet(x, y, alpha=0, nlambda=100,lambda.min.ratio=0.0001)
+par(mfrow=c(1,1))
+plot(CvRidgeMod)
+best.lambda.ridge <- CvRidgeMod$lambda.min
+best.lambda.ridge 
+coeff_ridge <- coefficients(RidgeMod,s=best.lambda.ridge)
+```
+
+The figure above includes the cross-validation curve (red dotted line) and upper and lower standard deviation curves along the lambda sequence (error bars). In the beginning of the procedure (to the right of the figure), the MSE is very high, and the coefficients are restricted to be too small; and then at some point, it kind of levels off. This seems to indicate that the full model is doing a good job.
+
+We then compare the coefficients of our ols model with the ridge regression:
+
+
+```{r problem 8.6}
+vif_ols <- vif(fit_price_train_new_trans_2)
+df_coeff_ridge <- data.frame(coeff = coeff_ridge@Dimnames[[1]],
+                             coeff_ridge = coeff_ridge@x)
+df_vif <- data.frame(coeff = names(vif_ols), vif_ols = vif_ols)
+
+df_ridge <- df_coeff_ols %>% 
+            left_join(df_coeff_wls, by=c('coeff')) %>% 
+            left_join(df_coeff_ridge, by=c('coeff')) %>%
+            left_join(df_vif, by=c('coeff'))
+df_ridge
+```
+
+As we can both models have close coefficients and all of them has the same sign which indicates we were able to deal with the multicolinearity problem in our ols model. Moreover we can see that the vifs our ols model is within the accpetable threshold of 10. Last but not least the optimal lambda of the ridge regression is 0.03625.
+
+Next we run the Lasso regression by setting up the alpha to 1 and using the best lambda. Lasso regression is another method to address multicolinearity.
+
+
+```{r problem 8.7}
+set.seed(1023)
+LassoMod <- glmnet(x, y, alpha=1, nlambda=100,lambda.min.ratio=0.0001)
+plot(LassoMod,xvar="norm",label=TRUE)
+CvLassoMod <- cv.glmnet(x, y, alpha=1, nlambda=100,lambda.min.ratio=0.0001)
+plot(CvLassoMod)
+best.lambda.lasso <- CvLassoMod$lambda.min
+best.lambda.lasso
+coeff_lasso <- coefficients(LassoMod,s=best.lambda.lasso)
+```
+
+we then compare its coefficients with the OLS model. 
+
+```{r problem 8.8}
+coeff_lasso_names <- coeff_lasso@Dimnames[[1]]
+df_coeff_lasso <- data.frame()
+for (i in 1:length(coeff_lasso)) {
+  df <- data.frame(coeff = coeff_lasso_names[i],
+                   coeff_lasso = coeff_lasso[i])
+  df_coeff_lasso <- rbind(df, df_coeff_lasso)
+}
+
+df_lasso <- df_coeff_ols %>% 
+            left_join(df_coeff_wls, by=c('coeff')) %>% 
+            left_join(df_coeff_ridge, by=c('coeff')) %>%
+            left_join(df_coeff_lasso, by=c('coeff')) %>%
+            left_join(df_vif, by=c('coeff'))
+df_lasso
+```
+
+
+As we can see both models have close coefficients and all of them has the same sign which indicates we were able to deal with the multicolinearity problem in our ols model. Moreover we can see that the vifs our ols model is within the acceptable threshold of 10. The optimal lambda of the lasso regression is 0.000648.
+
+Elastic Net regression is another method to address multicolinearity and it's a combination of Ridge and Lasso (we need to set up alpha to 0.5):
+
+
+```{r problem 8.9}
+set.seed(1023)
+EnetMod <- glmnet(x, y, alpha=0.5, nlambda=100,lambda.min.ratio=0.0001)
+CvElasticnetMod <- cv.glmnet(x, y,alpha=0.5,nlambda=100,lambda.min.ratio=0.0001)
+plot(CvElasticnetMod)
+best.lambda.enet <- CvElasticnetMod$lambda.min
+best.lambda.enet
+coeff_enet <- coefficients(EnetMod,s=best.lambda.enet)
+```
+
+We then compare its coefficients with our ols model:
+
+```{r problem 8.10}
+coeff_enet_names <- coeff_enet@Dimnames[[1]]
+df_coeff_enet <- data.frame()
+for (i in 1:length(coeff_enet)) {
+  df <- data.frame(coeff = coeff_enet_names[i],
+                   coeff_enet = coeff_enet[i])
+  df_coeff_enet <- rbind(df, df_coeff_enet)
+}
+
+df_enet <- df_coeff_ols %>% 
+            left_join(df_coeff_wls, by=c('coeff')) %>% 
+            left_join(df_coeff_ridge, by=c('coeff')) %>%
+            left_join(df_coeff_lasso, by=c('coeff')) %>%
+            left_join(df_coeff_enet, by=c('coeff')) %>%
+            left_join(df_vif, by=c('coeff'))
+df_enet
+```
+
+As we can see both models have close coefficients and all of them has the same sign which indicates we were able to deal with the multicolinearity problem in our ols model. Moreover we can see that the vifs our ols model is within the acceptable threshold of 10. The optimal lambda of the Elastic net regression is 0.00118.
+
+We perform then the Huber's method for the robust regression. Robust regression is way to address influential observations or outliers in the data. By plotting the Cook's distance, we don't see any outlier in our data with cook's distance higher than 0.04.
+
+```{r problem 8.11}
+set.seed(1023)
+# Influential observations
+olsrr::ols_plot_resid_lev(fit_price_train_new_trans_2)
+df_hs_train_trans %>%
+  dplyr::mutate(Observation = row.names(df_hs_train_trans)) %>%
+  dplyr::select(Observation, price) %>%
+  cbind(dplyr::select(data.frame(stats::influence.measures(fit_price_train_new_trans_2)$infmat), cook.d)) %>% 
+  dplyr::arrange(desc(cook.d)) %>%
+  dplyr::filter(cook.d >= 0.04)
+olsrr::ols_plot_cooksd_chart(fit_price_train_new_trans_2)
+```
+
+We then fit the robust regression model using the rlm function:
+
+```{r problem 8.12}
+set.seed(1023)
+rr.huber <- rlm(log(price) ~., df_hs_train_trans)
+summary(rr.huber)
+coeff_huber <- rr.huber$coefficients
+```
+We then compare the coefficients with the ols model:
+
+```{r problem 8.13}
+df_coeff_huber <- data.frame(coeff = names(coeff_huber), coeff_huber = coeff_huber)
+
+df_huber <- df_coeff_ols %>% 
+            left_join(df_coeff_wls, by=c('coeff')) %>% 
+            left_join(df_coeff_ridge, by=c('coeff')) %>%
+            left_join(df_coeff_lasso, by=c('coeff')) %>%
+            left_join(df_coeff_enet, by=c('coeff')) %>%
+            left_join(df_coeff_huber, by=c('coeff'))
+df_huber
+```
+
+As we can see both models have close coefficients and all of them has the same sign which indicates we were able to deal with outliers in our ols model.
+
+
+
+***9.	Build an alternative model based on one of the following approaches to predict price: regression tree, NN, or SVM.  Check the applicable model assumptions. Explore using a logistic regression.***
+
+
+***10.	Use the test data set to assess the model performances from above.***
+
+```{r problem 10.1}
+#Performance on the training dataset
+
+y = df_hs_train_trans$price
+
+y_hat.ols <- predict(fit_price_train_new_trans_2, newdata = df_hs_train_trans)
+y_hat.ols <- exp(y_hat.ols)
+
+y_hat.weight <- predict(fit_price_train_new_trans_inf_w2, newdata = df_hs_train_trans)
+y_hat.weight <- exp(y_hat.weight)
+
+y_hat.hubber <- predict(rr.huber, newdata = df_hs_train_trans)
+y_hat.hubber <- exp(y_hat.hubber)
+
+y_hat.ridge <- predict(RidgeMod, s = best.lambda.ridge, newx = x)
+y_hat.ridge <- exp(y_hat.ridge)
+
+y_hat.lasso <- predict(LassoMod, s = best.lambda.lasso, newx = x)
+y_hat.lasso <- exp(y_hat.lasso)
+
+y_hat.enet <- predict(CvElasticnetMod , s = best.lambda.enet, newx = x)
+y_hat.enet <- exp(y_hat.enet)
+
+sst <- sum((y - mean(y))^2)
+
+sse.ols <- sum((y - y_hat.ols)^2)
+sse.weight <- sum((y - y_hat.weight)^2)
+sse.hubber <- sum((y - y_hat.hubber)^2)
+sse.ridge <- sum((y-y_hat.ridge)^2)
+sse.lasso <- sum((y-y_hat.lasso)^2)
+sse.enet <- sum((y-y_hat.enet)^2)
+
+
+sse_models <- c("sse.ols", "sse.weight", "sse.hubber", "sse.ridge", "sse.lasso", "sse.enet")
+sse_values <- c(sse.ols, sse.weight, sse.hubber, sse.ridge, sse.lasso, sse.enet)
+
+df_sse_train <- data.frame(sse_models, sse_values)
+df_sse_train <- df_sse_train[order(sse_values),]
+df_sse_train
+
+
+# R squared
+rsq.ols <- 1 - sse.ols / sst
+rsq.weight <- 1 - sse.weight / sst
+rsq.hubber <- 1 - sse.hubber / sst
+rsq.ridge <- 1 - sse.ridge / sst
+rsq.lasso <- 1 - sse.lasso / sst
+rsq.enet  <- 1 - sse.enet  / sst
+
+#cbind(rsq.ols,rsq.ridge,rsq.lasso,rsq.enet)
+
+rsq_models <- c("rsq.ols", "rsq.weight", "rsq.hubber", "rsq.ridge", "rsq.lasso", "rsq.enet")
+rsq_values <- c(rsq.ols, rsq.weight, rsq.hubber, rsq.ridge, rsq.lasso, rsq.enet)
+
+df_rsq_train <- data.frame(rsq_models, rsq_values)
+df_rsq_train <- df_rsq_train[order(-rsq_values),]
+df_rsq_train
+```
+
+
+```{r problem 10.2}
+#Performance on the test dataset
+
+x_test <- data.matrix(dplyr::select(df_hs_test_trans, -price))
+y_test = df_hs_test_trans$price
+
+y_hat.ols <- predict(fit_price_train_new_trans_2, newdata = df_hs_test_trans)
+y_hat.ols <- exp(y_hat.ols)
+
+y_hat.weight <- predict(fit_price_train_new_trans_inf_w2, newdata = df_hs_test_trans)
+y_hat.weight <- exp(y_hat.weight)
+
+y_hat.hubber <- predict(rr.huber, newdata = df_hs_test_trans)
+y_hat.hubber <- exp(y_hat.hubber)
+
+y_hat.ridge <- predict(RidgeMod, s = best.lambda.ridge, newx = x_test)
+y_hat.ridge <- exp(y_hat.ridge)
+
+y_hat.lasso <- predict(LassoMod, s = best.lambda.lasso, newx = x_test)
+y_hat.lasso <- exp(y_hat.lasso)
+
+y_hat.enet <- predict(CvElasticnetMod , s = best.lambda.enet, newx = x_test)
+y_hat.enet <- exp(y_hat.enet)
+
+sst <- sum((y_test - mean(y_test))^2)
+
+sse.ols <- sum((y_test - y_hat.ols)^2)
+sse.weight <- sum((y_test - y_hat.weight)^2)
+sse.hubber <- sum((y_test - y_hat.hubber)^2)
+sse.ridge <- sum((y_test - y_hat.ridge)^2)
+sse.lasso <- sum((y_test - y_hat.lasso)^2)
+sse.enet <- sum((y_test - y_hat.enet)^2)
+
+
+sse_models <- c("sse.ols", "sse.weight", "sse.hubber", "sse.ridge", "sse.lasso", "sse.enet")
+sse_values <- c(sse.ols, sse.weight, sse.hubber, sse.ridge, sse.lasso, sse.enet)
+
+df_sse_test <- data.frame(sse_models, sse_values)
+df_sse_test <- df_sse_test[order(sse_values),]
+df_sse_test
+
+
+# R squared
+rsq.ols <- 1 - sse.ols / sst
+rsq.weight <- 1 - sse.weight / sst
+rsq.hubber <- 1 - sse.hubber / sst
+rsq.ridge <- 1 - sse.ridge / sst
+rsq.lasso <- 1 - sse.lasso / sst
+rsq.enet  <- 1 - sse.enet  / sst
+
+rsq_models <- c("rsq.ols", "rsq.weight", "rsq.hubber", "rsq.ridge", "rsq.lasso", "rsq.enet")
+rsq_values <- c(rsq.ols, rsq.weight, rsq.hubber, rsq.ridge, rsq.lasso, rsq.enet)
+
+df_rsq_test <- data.frame(rsq_models, rsq_values)
+df_rsq_test <- df_rsq_test[order(-rsq_values),]
+df_rsq_test
+```
+
+
+
+```{r problem 10.3}
+df_sse <- merge(df_sse_test, df_sse_train, by = "sse_models")
+df_sse <- df_sse %>% 
+        rename("sse_values_test" = "sse_values.x",
+               "sse_values_train" = "sse_values.y")
+
+df_sse <- df_sse %>% arrange(sse_values_test)
+df_sse
+
+df_rsq <- merge(df_rsq_test, df_rsq_train, by = "rsq_models")
+df_rsq <- df_rsq %>% 
+        rename("rsq_values_test" = "rsq_values.x",
+               "rsq_values_train" = "rsq_values.y")
+
+df_rsq <- df_rsq %>% arrange(desc(rsq_values_test))
+df_rsq 
+```
+
+#Add the date transformation from Charles - try it
+#Keep the outliers - try it
+
+***11.	Based on the performances on both train and test data sets, determine your primary (champion) model and the other model which would be your benchmark model.***
+
+***2.	Create a model development document that describes the model following this template, input the name of the authors, Harvard IDs, the name of the Group, all of your code and calculations, etc..:***
+
