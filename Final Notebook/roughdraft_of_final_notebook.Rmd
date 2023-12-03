@@ -16,7 +16,7 @@ required_packages <- c(
   "plyr", "alr4", "caret", "car", "corrplot", "dplyr", "effects", "fastDummies",
   "faraway", "GGally", "ggplot2", "ggpubr", "glmnet", "lmtest", "MASS", "ModelMetrics",
   "nortest", "olsrr", "onewaytests", "readr", "here", "stringr", "knitr", "reshape2", "leaflet",
-  "RColorBrewer", "scales", "purrr"
+  "RColorBrewer", "scales", "purrr", "DT"
 )
 
 # Establish CRAN for package installs
@@ -868,13 +868,144 @@ Up to this point, we have successfully conducted an exploratory data analysis (E
 ### Initial OLS Model
 To commence the model development process, we establish an Ordinary Least Squares (OLS) regression model as our baseline. This initial model utilizes the features that have undergone transformation and cleaning during the exploratory data analysis (EDA) phase. To maintain data quality, enhance model performance, and facilitate interpretability, we begin by removing columns introduced in prior graphical iterations. Additionally, we employ the standard data preprocessing practice of dropping columns with missing values (NA) to ensure dataset integrity. This step ensures that our subsequent analyses and models are built upon a robust and complete dataset, minimizing errors and potential biases.
 
-```{r initial_model, echo = TRUE, include = TRUE}
+```{r initial_model, echo = FALSE, include = FALSE}
 # Drop columns created for visualizations in prior steps
 train_df_non_linear <- train_df_non_linear[, !colnames(train_df_non_linear) %in% c("view_category", "condition_category", "grade_category", "grade_category_numeric", "z_score", "lat", "long", 'sqft_above', 'month_sold', 'week_of_year', 'condition_3')]
 train_df_linear <- train_df_linear[, !colnames(train_df_linear) %in% c("view_category", "condition_category", "grade_category", "grade_category_numeric", "z_score", "lat", "long", 'sqft_above', 'month_sold', 'week_of_year', 'condition_3')]
 
-linear_model_inital <- lm(price ~ ., data = train_df_linear)
-summary(linear_model_inital)
+#' This function evaluates a given regression model using training and testing datasets, calculates
+#' performance metrics like SSE, R-squared, RMSE, and MAE for both training and test sets, and then adds
+#' these metrics to a provided results dataframe or creates one if not provided. If the display flag is set
+#' to TRUE, it also displays the dataframe as an interactive table.
+#'
+#' @param model_name A string representing the name of the model.
+#' @param model The model object to be evaluated.
+#' @param train_df A dataframe containing the training data.
+#' @param test_df A dataframe containing the testing data.
+#' @param target_var The name of the target/response variable in the dataset.
+#' @param features Optional vector of feature names to be used for the model (default: NULL, which means use all features).
+#'   If features are not provided (NULL), all available features in the dataset will be used for modeling.
+#' @param df_results An optional dataframe where model performance metrics will be added (default: NULL).
+#' @return The updated dataframe with the added model performance metrics.
+
+add_model_performance <- function(model_name, model, train_df, test_df, target_var, features = NULL, df_results = NULL) {
+  # Create df_results if not provided
+  if (is.null(df_results)) {
+    df_results <- data.frame(
+      Model = character(),
+      SSE_train = double(),
+      SSE_test = double(),
+      R_squared_train = double(),
+      R_squared_test = double(),
+      RMSE_train = double(),
+      RMSE_test = double(),
+      MAE_train = double(),
+      MAE_test = double(),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Splitting the data into features and target variable
+  y_train <- train_df[[target_var]]  # Extract the target variable for training data
+  y_test <- test_df[[target_var]]    # Extract the target variable for testing data
+  x_train <- train_df[, !(names(train_df) %in% target_var), drop = FALSE]  # Features for training data
+  x_test <- test_df[, !(names(test_df) %in% target_var), drop = FALSE]    # Features for testing data
+
+  # Use the provided features if available, otherwise use all features
+  if (!is.null(features)) {
+    x_train_sub <- x_train[, features, drop = FALSE]  # Subset of features for training
+    x_test_sub <- x_test[, features, drop = FALSE]    # Subset of features for testing
+  } else {
+    x_train_sub <- x_train  # Use all available features for training
+    x_test_sub <- x_test    # Use all available features for testing
+  }
+
+  # Predictions for the model
+  y_hat_train <- predict(model, newdata = x_train_sub)  # Make predictions on training data
+  y_hat_test <- predict(model, newdata = x_test_sub)    # Make predictions on testing data
+
+  # Calculating performance metrics
+  mae_train <- mean(abs(y_train - y_hat_train))  # Mean Absolute Error for training data
+  mae_test <- mean(abs(y_test - y_hat_test))    # Mean Absolute Error for testing data
+
+  sse_train <- sum((y_train - y_hat_train)^2)  # Sum of Squared Errors for training data
+  sse_test <- sum((y_test - y_hat_test)^2)    # Sum of Squared Errors for testing data
+
+  tss_train <- sum((y_train - mean(y_train))^2)  # Total Sum of Squares for training data
+  tss_test <- sum((y_test - mean(y_test))^2)    # Total Sum of Squares for testing data
+
+  rsq_train <- 1 - (sse_train / tss_train)  # R-squared for training data
+  rsq_test <- 1 - (sse_test / tss_test)    # R-squared for testing data
+
+  rmse_train <- sqrt(mean((y_train - y_hat_train)^2))  # Root Mean Squared Error for training data
+  rmse_test <- sqrt(mean((y_test - y_hat_test)^2))    # Root Mean Squared Error for testing data
+
+  # Creating a new row with the results, ensuring columns are in the correct order
+  new_row <- data.frame(
+    Model = model_name,
+    SSE_train = sse_train,
+    SSE_test = sse_test,
+    R_squared_train = rsq_train,
+    R_squared_test = rsq_test,
+    RMSE_train = rmse_train,
+    RMSE_test = rmse_test,
+    MAE_train = mae_train,
+    MAE_test = mae_test
+  )
+
+  df_results <- rbind(df_results, new_row)  # Append the new row to the results dataframe
+
+  # Returning the updated dataframe
+  return(df_results)
+}
+
+#' Display Model Results using Datatable
+#'
+#' This function displays a dataframe containing model performance metrics using the `datatable` function.
+#'
+#' @param df_results A dataframe containing model performance metrics.
+#' @param caption Optional caption for the table (default: "Model Comparison").
+#' @return NULL (it displays the table but doesn't return a value).
+
+view_model_results <- function(df_results, caption = "Model Comparison") {
+  # Display the dataframe using datatable
+  datatable(
+    df_results,
+    caption = caption,
+    options = list(
+      paging = FALSE,
+      autoWidth = TRUE,
+      scrollX = TRUE,
+      fixedColumns = list(leftColumns = 1)
+    )
+  )
+}
+```
+
+```{r}
+linear_model_initial <- lm(price ~ ., data = train_df_linear)
+df_results <- add_model_performance(
+  model_name = "OLS_linear",
+  model = linear_model_initial,
+  train_df = train_df_linear,
+  test_df = test_df_linear,
+  target_var = "price",
+  features = NULL, # Replace NULL with a vector of feature names if needed
+  df_results = NULL # Pass the previously created results
+)
+
+linear_model_initial_2 <- lm(price ~ bathrooms + bedrooms + yr_renovated, data = train_df_linear)
+df_results <- add_model_performance(
+  model_name = "OLS_linear_2",
+  model = linear_model_initial_2,
+  train_df = train_df_linear,
+  test_df = test_df_linear,
+  target_var = "price",
+  features = c("bathrooms", "bedrooms", "yr_renovated"),
+  df_results = df_results
+)
+
+view_model_results(df_results)
 ```
 
 ### Detailed Inital Model Insights
@@ -898,14 +1029,14 @@ summary(linear_model_inital)
 1. **Multicollinearity Check**: We will calculate the Variance Inflation Factor (VIF) for each predictor to identify multicollinearity, which can inflate the variance of the estimated regression coefficients and make the model less reliable.
 
 ```{r inital_model_vif_examinaiton}
-print(vif(linear_model_inital))
+print(vif(linear_model_initial))
 ```
 
 **Explanation**: In this section, we load the necessary libraries for modeling, including `lmtest` and `car`. We then use the `lm()` function to create the initial OLS regression model, where we predict the `price` based on all available features in the `train_df` dataset. The `summary()` function provides detailed information about the model, including coefficients, significance levels, and goodness-of-fit statistic# Feature Evaluation
 After constructing the initial model, we proceed with feature evaluation. This step involves investigating the importance of each predictor in the model. We assess the significance of individual variables and consider whether to remove or combine categorical variables to optimize model performance. The R code below demonstrates how to evaluate the importance of features:
 
 ```{r feature_evaluation, echo = TRUE}
-predictions <- predict(linear_model_inital, newdata = test_df_linear)
+predictions <- predict(linear_model_initial, newdata = test_df_linear)
 
 # Assuming 'actual_values' is the actual target variable values in your test dataset
 actual_values <- test_df_linear$price
